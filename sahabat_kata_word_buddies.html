@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sahabat Kata">
+  <meta name="theme-color" content="#0d9488">
+  <title>Sahabat Kata / Word Buddies</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Canvas Confetti CDN for celebration effects -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts: Quicksand for soft, child-friendly readability -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Quicksand', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            mango: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706'
+            },
+            lagoon: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e'
+            },
+            coral: {
+              400: '#fb7185',
+              500: '#f43f5e',
+              600: '#e11d48'
+            },
+            cream: '#FFFDF9',
+            cardback: '#FFF9F0'
+          },
+          boxShadow: {
+            'chunky': '0 6px 0 0 rgba(0, 0, 0, 0.15)',
+            'chunky-active': '0 2px 0 0 rgba(0, 0, 0, 0.15)',
+            'card-3d': '0 10px 25px -5px rgba(13, 148, 136, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06), 0 4px 0 0 rgba(0, 0, 0, 0.08)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Prevent rubber banding & smooth scrolling */
+    html, body {
+      overscroll-behavior-y: contain;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Quicksand', system-ui, sans-serif;
+    }
+
+    /* 3D Flip Card Styles */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+
+    /* Soft scrollbar for category pills */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Animated bouncy buttons */
+    .btn-bounce {
+      transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-bounce:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.15);
+    }
+
+    /* Pulse animation for pronunciation guide */
+    @keyframes gentlePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .pulse-gentle {
+      animation: gentlePulse 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="bg-[#FFFDF9] text-gray-800 antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+  <!-- Top App Navigation -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-amber-100/80 px-4 py-2.5 shadow-sm">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      
+      <!-- Logo & Subtitle -->
+      <div class="flex items-center space-x-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-mango-400 to-coral-500 flex items-center justify-center text-white shadow-md text-xl transform -rotate-3">
+          🌴
+        </div>
+        <div>
+          <h1 class="text-lg font-extrabold text-lagoon-700 leading-tight flex items-center gap-1.5">
+            Sahabat Kata
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-lagoon-100 text-lagoon-700">EN • ID</span>
+          </h1>
+          <p class="text-[11px] font-semibold text-amber-700 tracking-tight">Word Buddies • Belajar & Bermain</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons: Sound & Settings & Offline Status -->
+      <div class="flex items-center space-x-1.5">
+        <!-- Offline Indicator Badge -->
+        <span id="offlineBadge" title="Bekerja 100% Offline / Works Offline" class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-extrabold flex items-center gap-1 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Offline Ready
+        </span>
+
+        <!-- Settings Modal Trigger -->
+        <button id="btnOpenSettings" aria-label="Settings" class="p-2 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors btn-bounce border border-amber-200">
+          ⚙️
+        </button>
+      </div>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <div class="max-w-md mx-auto mt-2 pt-1 border-t border-amber-50">
+      <div class="grid grid-cols-3 gap-1.5 p-1 bg-amber-100/60 rounded-2xl">
+        <button id="modeTab1" onclick="switchMode('flashcard')" class="mode-tab-btn py-2 px-1 text-center font-bold text-xs rounded-xl transition-all duration-200 bg-white text-lagoon-700 shadow-sm">
+          🎴 Kartu Flip
+        </button>
+        <button id="modeTab2" onclick="switchMode('quiz')" class="mode-tab-btn py-2 px-1 text-center font-bold text-xs rounded-xl transition-all duration-200 text-gray-600 hover:text-gray-900">
+          🎯 Tebak Cepat
+        </button>
+        <button id="modeTab3" onclick="switchMode('duo')" class="mode-tab-btn py-2 px-1 text-center font-bold text-xs rounded-xl transition-all duration-200 text-gray-600 hover:text-gray-900">
+          🤝 Duo Pass
+        </button>
+      </div>
+    </div>
+
+    <!-- Category Horizontal Scroll Bar -->
+    <div class="max-w-md mx-auto mt-2.5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1" id="categoryPills">
+      <!-- Injected via JavaScript -->
+    </div>
+  </header>
+
+  <!-- Main Playground Viewport -->
+  <main class="flex-1 max-w-md mx-auto w-full px-4 py-3 flex flex-col justify-center items-center">
+
+    <!-- ==================== MODE 1: CLASSIC FLASHCARD ==================== -->
+    <section id="viewFlashcard" class="w-full flex flex-col items-center">
+      
+      <!-- Progress Bar & Indicator -->
+      <div class="w-full flex justify-between items-center mb-2 px-1">
+        <span class="text-xs font-bold text-gray-500" id="cardCounter">1 / 140</span>
+        <div class="flex items-center gap-2">
+          <button id="btnToggleSpeechLang" onclick="toggleAudioAutoPlay()" class="text-xs font-bold px-2 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+            <span id="autoPlayIcon">🔊</span> Auto-Suara
+          </button>
+          <button id="btnShuffle" onclick="shuffleCards()" title="Acak Kartu" class="text-xs font-bold p-1 px-2.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">
+            🔀 Acak
+          </button>
+        </div>
+      </div>
+
+      <!-- 3D Flip Card Container -->
+      <div class="w-full h-[360px] sm:h-[400px] perspective-1000 cursor-pointer" onclick="flipCard()">
+        <div id="flashcardInner" class="w-full h-full relative transform-style-3d transition-transform duration-500 rounded-3xl shadow-card-3d border-4 border-amber-200 bg-white">
+          
+          <!-- FRONT FACE (Picture + Primary Language) -->
+          <div class="absolute inset-0 backface-hidden rounded-3xl p-6 flex flex-col justify-between items-center bg-gradient-to-b from-white to-amber-50/50">
+            <div class="w-full flex justify-between items-center">
+              <span id="frontCatBadge" class="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-amber-100 text-amber-800 rounded-full">Kategori</span>
+              <span class="text-xs text-gray-400 font-semibold">Ketuk untuk putar 🔄</span>
+            </div>
+
+            <!-- Big Visual Picture / Icon -->
+            <div class="my-auto flex flex-col items-center">
+              <div id="frontCardIcon" class="text-7xl sm:text-8xl p-4 transform transition-transform hover:scale-110 drop-shadow-md select-none">
+                🐱
+              </div>
+              <h2 id="frontMainWord" class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2 tracking-tight text-center">
+                Kucing
+              </h2>
+              <div id="frontPhoneticWrap" class="mt-1">
+                <span id="frontPhonetic" class="text-xs sm:text-sm font-semibold text-lagoon-600 bg-lagoon-50 px-3 py-1 rounded-full border border-lagoon-200">
+                  KOO-ching
+                </span>
+              </div>
+            </div>
+
+            <!-- Speech Audio Speaker Button -->
+            <div class="w-full flex justify-between items-center pt-2">
+              <button onclick="event.stopPropagation(); speakCurrentWord('front')" class="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-lagoon-500 text-white font-bold text-sm shadow-chunky btn-bounce">
+                <span>🔊 Dengarkan</span>
+              </button>
+              <span class="text-xs font-bold text-gray-400">Balik &rarr;</span>
+            </div>
+          </div>
+
+          <!-- BACK FACE (English / Target Translation) -->
+          <div class="absolute inset-0 backface-hidden rotate-y-180 rounded-3xl p-6 flex flex-col justify-between items-center bg-gradient-to-b from-lagoon-50 to-emerald-50/40 border-amber-200">
+            <div class="w-full flex justify-between items-center">
+              <span id="backCatBadge" class="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-lagoon-100 text-lagoon-800 rounded-full">English</span>
+              <span class="text-xs text-gray-400 font-semibold">Ketuk untuk putar 🔄</span>
+            </div>
+
+            <!-- Translated Visual Element -->
+            <div class="my-auto flex flex-col items-center">
+              <div id="backCardIcon" class="text-7xl sm:text-8xl p-4 drop-shadow-md select-none">
+                🐱
+              </div>
+              <h2 id="backMainWord" class="text-3xl sm:text-4xl font-extrabold text-lagoon-700 mt-2 tracking-tight text-center">
+                Cat
+              </h2>
+              <p class="text-sm font-bold text-gray-500 mt-1">Bahasa Indonesia: <span id="backSubWord" class="text-gray-800">Kucing</span></p>
+            </div>
+
+            <!-- Speak Audio Back Button -->
+            <div class="w-full flex justify-between items-center pt-2">
+              <button onclick="event.stopPropagation(); speakCurrentWord('back')" class="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-coral-500 text-white font-bold text-sm shadow-chunky btn-bounce">
+                <span>🔊 Say "Cat"</span>
+              </button>
+              <span class="text-xs font-bold text-lagoon-600">&larr; Balik</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Thumb-Friendly Flashcard Navigation Buttons -->
+      <div class="w-full flex items-center justify-between gap-3 mt-4">
+        <button onclick="prevCard()" class="flex-1 py-3 px-4 rounded-2xl bg-white border-2 border-gray-200 font-bold text-gray-700 shadow-chunky btn-bounce flex items-center justify-center gap-1">
+          <span>⏮️</span> Sebelumnya
+        </button>
+        <button onclick="flipCard()" class="px-5 py-3 rounded-2xl bg-amber-100 border-2 border-amber-300 font-bold text-amber-900 shadow-chunky btn-bounce">
+          🔄 Balik
+        </button>
+        <button onclick="nextCard()" class="flex-1 py-3 px-4 rounded-2xl bg-lagoon-600 border-2 border-lagoon-700 font-extrabold text-white shadow-chunky btn-bounce flex items-center justify-center gap-1">
+          Berikutnya <span>⏭️</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== MODE 2: TEBAK CEPAT (QUIZ) ==================== -->
+    <section id="viewQuiz" class="w-full flex flex-col items-center hidden">
+      <!-- Quiz Stats Header -->
+      <div class="w-full flex justify-between items-center mb-2 px-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800">
+            Skor: <span id="quizScore" class="font-extrabold">0</span>
+          </span>
+          <span class="text-xs font-bold px-3 py-1 rounded-full bg-rose-100 text-rose-700">
+            🔥 Beruntun: <span id="quizStreak" class="font-extrabold">0</span>
+          </span>
+        </div>
+        <button onclick="speakQuizPrompt()" class="p-2 bg-lagoon-100 text-lagoon-700 rounded-xl font-bold text-xs flex items-center gap-1">
+          🔊 Ulangi Suara
+        </button>
+      </div>
+
+      <!-- Quiz Target Question Card -->
+      <div class="w-full bg-white rounded-3xl p-5 border-4 border-amber-200 shadow-card-3d flex flex-col items-center justify-center min-h-[170px] relative overflow-hidden">
+        <div class="absolute top-2 left-3">
+          <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider" id="quizPromptType">Pilih Jawaban yang Benar:</span>
+        </div>
+        
+        <div id="quizPromptIcon" class="text-6xl mb-1 select-none">🐾</div>
+        <h3 id="quizPromptText" class="text-2xl sm:text-3xl font-extrabold text-gray-800 text-center tracking-tight">Kucing</h3>
+        <p id="quizPromptPhonetic" class="text-xs font-semibold text-lagoon-600 bg-lagoon-50 px-2 py-0.5 rounded-md mt-1">KOO-ching</p>
+      </div>
+
+      <!-- 4 Touch-Optimized Options Grid -->
+      <div class="w-full grid grid-cols-2 gap-2.5 mt-3" id="quizOptionsGrid">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- ==================== MODE 3: DUO / TURN & PASS ==================== -->
+    <section id="viewDuo" class="w-full flex flex-col items-center hidden">
+      <!-- Duo Mode Banner & Stars -->
+      <div class="w-full flex justify-between items-center mb-2 px-1">
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs font-bold text-gray-600">Bintang Kerja Sama:</span>
+          <span id="duoStarsDisplay" class="text-amber-500 font-extrabold text-sm">⭐⭐⭐ (0)</span>
+        </div>
+        <button onclick="resetDuoScore()" class="text-xs font-semibold text-gray-400 hover:text-gray-700">
+          Ulang
+        </button>
+      </div>
+
+      <!-- Dynamic Turn Indicator Card -->
+      <div id="duoTurnCard" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-white rounded-2xl p-3 shadow-md mb-3 flex items-center justify-between transition-colors">
+        <div class="flex items-center gap-2.5">
+          <span id="duoTurnAvatar" class="text-3xl">👦</span>
+          <div>
+            <h4 id="duoTurnTitle" class="text-sm font-extrabold leading-tight">Giliran Anak / Child's Turn</h4>
+            <p id="duoTurnInstructions" class="text-xs text-amber-50 font-semibold">Tebak arti kata dalam Bahasa Inggris!</p>
+          </div>
+        </div>
+        <span class="text-xs font-black bg-white/30 px-2.5 py-1 rounded-full">Giliran 1</span>
+      </div>
+
+      <!-- Duo Center Prompt Display -->
+      <div class="w-full bg-white rounded-3xl p-5 border-4 border-teal-200 shadow-card-3d flex flex-col items-center justify-center min-h-[220px]">
+        <div id="duoBigIcon" class="text-7xl mb-2 select-none">🐘</div>
+        <div id="duoWordDisplay" class="text-center">
+          <h3 id="duoPrimaryWord" class="text-3xl font-extrabold text-gray-900">Gajah</h3>
+          <p id="duoPronunciation" class="text-sm font-bold text-lagoon-600 bg-lagoon-50 px-3 py-1 rounded-full mt-1.5 inline-block border border-lagoon-200">
+            GAH-jah
+          </p>
+        </div>
+
+        <!-- Answer peek box (initially hidden) -->
+        <div id="duoPeekAnswer" class="mt-3 p-3 bg-teal-50 border border-teal-200 rounded-2xl text-center w-full hidden">
+          <p class="text-xs text-gray-500 font-bold uppercase">Kunci Jawaban / Answer Key:</p>
+          <p id="duoAnswerEnglish" class="text-xl font-extrabold text-lagoon-800">Elephant</p>
+          <p id="duoAnswerIndo" class="text-sm font-bold text-amber-700">Gajah (GAH-jah)</p>
+        </div>
+      </div>
+
+      <!-- Duo Action Controls -->
+      <div class="w-full mt-3 flex flex-col gap-2">
+        <button id="btnDuoPeek" onclick="toggleDuoPeek()" class="w-full py-2.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 font-bold text-sm shadow-sm btn-bounce">
+          👁️ Intip Jawaban / Check Answer
+        </button>
+
+        <div class="w-full grid grid-cols-2 gap-2">
+          <button onclick="handleDuoResult(false)" class="py-3 px-3 rounded-2xl bg-gray-100 border-2 border-gray-300 font-extrabold text-gray-700 shadow-chunky btn-bounce">
+            😅 Coba Lagi
+          </button>
+          <button onclick="handleDuoResult(true)" class="py-3 px-3 rounded-2xl bg-emerald-500 border-2 border-emerald-600 font-extrabold text-white shadow-chunky btn-bounce flex items-center justify-center gap-1.5">
+            🌟 Benar! / Got It!
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Helper Bar -->
+  <footer class="bg-white/90 border-t border-amber-100 py-2 px-4 max-w-md mx-auto w-full text-center">
+    <p class="text-[11px] font-semibold text-gray-500">
+      💡 Tip: Sentuh ikon suara untuk mendengarkan lafal asli (Cocok untuk belajar bersama).
+    </p>
+  </footer>
+
+  <!-- SETTINGS MODAL DIALOG -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 border-4 border-amber-200 shadow-2xl relative">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-extrabold text-gray-800 flex items-center gap-1.5">
+          ⚙️ Pengaturan / Settings
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-700 font-black text-xl p-1">
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-4 text-sm font-semibold text-gray-700">
+        <!-- Sound Effects Web Audio Toggle -->
+        <div class="flex items-center justify-between p-2.5 bg-amber-50/70 rounded-2xl">
+          <div>
+            <p class="font-bold text-gray-800">Efek Suara Permainan</p>
+            <p class="text-xs text-gray-500 font-normal">Chimes, nada berhasil, offline audio</p>
+          </div>
+          <input type="checkbox" id="cfgSfx" checked onchange="toggleSfx(this.checked)" class="w-5 h-5 accent-lagoon-600 cursor-pointer">
+        </div>
+
+        <!-- Speech Speed Rate -->
+        <div class="p-2.5 bg-amber-50/70 rounded-2xl">
+          <div class="flex justify-between mb-1">
+            <span class="font-bold text-gray-800">Kecepatan Bicara / Speech Speed</span>
+            <span id="speechRateLabel" class="text-xs text-lagoon-700 font-extrabold">Normal (0.9x)</span>
+          </div>
+          <input type="range" id="cfgSpeed" min="0.5" max="1.2" step="0.1" value="0.9" oninput="updateSpeechRate(this.value)" class="w-full accent-lagoon-600">
+          <div class="flex justify-between text-[10px] text-gray-400 mt-0.5">
+            <span>Lambat (Pelan)</span>
+            <span>Cepat</span>
+          </div>
+        </div>
+
+        <!-- Card Front Display Preference -->
+        <div class="p-2.5 bg-amber-50/70 rounded-2xl">
+          <p class="font-bold text-gray-800 mb-1.5">Tampilan Depan Kartu</p>
+          <select id="cfgFrontMode" onchange="updateFrontMode(this.value)" class="w-full p-2 bg-white border border-amber-200 rounded-xl font-bold text-xs text-gray-800">
+            <option value="indo_first">Bahasa Indonesia Utama (Anak belajar Inggris)</option>
+            <option value="english_first">English Utama (Adult learning Indonesian)</option>
+            <option value="pic_only">Gambar Saja (Tantangan Tebak Gambar)</option>
+          </select>
+        </div>
+
+        <!-- Offline Guide Instructions -->
+        <div class="p-3 bg-lagoon-50 rounded-2xl border border-lagoon-200 text-xs text-lagoon-800">
+          <p class="font-bold flex items-center gap-1">📱 Cara Menggunakan Tanpa Internet:</p>
+          <p class="mt-1 font-normal leading-relaxed">
+            Halaman ini bekerja 100% offline. Di browser Chrome atau Safari, pilih menu <b>"Add to Home Screen"</b> (Tambahkan ke Layar Utama) untuk menyimpan aplikasi di HP Anda.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <button onclick="closeSettingsModal()" class="w-full py-3 bg-lagoon-600 text-white font-extrabold text-sm rounded-2xl shadow-chunky btn-bounce">
+          Simpan & Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      COMPLETE VOCABULARY DATASET (135+ essential items)
+      Equipped with:
+      - Indonesian word
+      - English word
+      - Easy-to-read Phonetic pronunciation for English speakers
+      - Crisp emoji/SVG representation
+      - Category tagging
+    */
+    const VOCABULARY = [
+      // --- ANIMALS / HEWAN (25) ---
+      { id: 1, cat: "animals", indo: "Kucing", en: "Cat", ph: "KOO-ching", icon: "🐱" },
+      { id: 2, cat: "animals", indo: "Anjing", en: "Dog", ph: "AHN-jing", icon: "🐶" },
+      { id: 3, cat: "animals", indo: "Burung", en: "Bird", ph: "BOO-roong", icon: "🐦" },
+      { id: 4, cat: "animals", indo: "Ikan", en: "Fish", ph: "EE-kahn", icon: "🐟" },
+      { id: 5, cat: "animals", indo: "Gajah", en: "Elephant", ph: "GAH-jah", icon: "🐘" },
+      { id: 6, cat: "animals", indo: "Monyet", en: "Monkey", ph: "MON-yet", icon: "🐒" },
+      { id: 7, cat: "animals", indo: "Sapi", en: "Cow", ph: "SAH-pee", icon: "🐄" },
+      { id: 8, cat: "animals", indo: "Ayam", en: "Chicken", ph: "AH-yahm", icon: "🐔" },
+      { id: 9, cat: "animals", indo: "Bebek", en: "Duck", ph: "BEH-beck", icon: "🦆" },
+      { id: 10, cat: "animals", indo: "Kuda", en: "Horse", ph: "KOO-dah", icon: "🐴" },
+      { id: 11, cat: "animals", indo: "Kambing", en: "Goat", ph: "KAHM-bing", icon: "🐐" },
+      { id: 12, cat: "animals", indo: "Kelinci", en: "Rabbit", ph: "keh-LEEN-chee", icon: "🐰" },
+      { id: 13, cat: "animals", indo: "Kupu-kupu", en: "Butterfly", ph: "KOO-poo KOO-poo", icon: "🦋" },
+      { id: 14, cat: "animals", indo: "Kura-kura", en: "Turtle", ph: "KOO-rah KOO-rah", icon: "🐢" },
+      { id: 15, cat: "animals", indo: "Harimau", en: "Tiger", ph: "hah-REE-mow", icon: "🐯" },
+      { id: 16, cat: "animals", indo: "Singa", en: "Lion", ph: "SEENG-ah", icon: "🦁" },
+      { id: 17, cat: "animals", indo: "Katak", en: "Frog", ph: "KAH-tahk", icon: "🐸" },
+      { id: 18, cat: "animals", indo: "Semut", en: "Ant", ph: "seh-MOOT", icon: "🐜" },
+      { id: 19, cat: "animals", indo: "Lebah", en: "Bee", ph: "leh-BAH", icon: "🐝" },
+      { id: 20, cat: "animals", indo: "Laba-laba", en: "Spider", ph: "LAH-bah LAH-bah", icon: "🕷️" },
+      { id: 21, cat: "animals", indo: "Lumba-lumba", en: "Dolphin", ph: "LOOM-bah LOOM-bah", icon: "🐬" },
+      { id: 22, cat: "animals", indo: "Hiu", en: "Shark", ph: "HEE-oo", icon: "🦈" },
+      { id: 23, cat: "animals", indo: "Ular", en: "Snake", ph: "OO-lahr", icon: "🐍" },
+      { id: 24, cat: "animals", indo: "Tikus", en: "Mouse", ph: "TEE-koos", icon: "🐭" },
+      { id: 25, cat: "animals", indo: "Zebra", en: "Zebra", ph: "ZEH-brah", icon: "🦓" },
+
+      // --- HOME & EVERYDAY ITEMS / RUMAH & BENDA (25) ---
+      { id: 26, cat: "home", indo: "Meja", en: "Table", ph: "MEH-jah", icon: "🪵" },
+      { id: 27, cat: "home", indo: "Kursi", en: "Chair", ph: "KOOR-see", icon: "🪑" },
+      { id: 28, cat: "home", indo: "Pintu", en: "Door", ph: "PEEN-too", icon: "🚪" },
+      { id: 29, cat: "home", indo: "Jendela", en: "Window", ph: "jen-DEH-lah", icon: "🪟" },
+      { id: 30, cat: "home", indo: "Tempat Tidur", en: "Bed", ph: "TEM-paht TEE-door", icon: "🛏️" },
+      { id: 31, cat: "home", indo: "Bantal", en: "Pillow", ph: "BAHN-tahl", icon: "🛋️" },
+      { id: 32, cat: "home", indo: "Selimut", en: "Blanket", ph: "seh-LEE-moot", icon: "🧶" },
+      { id: 33, cat: "home", indo: "Sendok", en: "Spoon", ph: "SEN-dock", icon: "🥄" },
+      { id: 34, cat: "home", indo: "Garpu", en: "Fork", ph: "GAHR-poo", icon: "🍴" },
+      { id: 35, cat: "home", indo: "Piring", en: "Plate", ph: "PEE-ring", icon: "🍽️" },
+      { id: 36, cat: "home", indo: "Gelas", en: "Glass/Cup", ph: "geh-LAHS", icon: "🥛" },
+      { id: 37, cat: "home", indo: "Mangkuk", en: "Bowl", ph: "MAHNG-kook", icon: "🥣" },
+      { id: 38, cat: "home", indo: "Lampu", en: "Lamp", ph: "LAHM-poo", icon: "💡" },
+      { id: 39, cat: "home", indo: "Kipas Angin", en: "Fan", ph: "KEE-pahs AHNG-in", icon: "🪭" },
+      { id: 40, cat: "home", indo: "Sapu", en: "Broom", ph: "SAH-poo", icon: "🧹" },
+      { id: 41, cat: "home", indo: "Sabun", en: "Soap", ph: "SAH-boon", icon: "🧼" },
+      { id: 42, cat: "home", indo: "Handuk", en: "Towel", ph: "HAHN-dook", icon: "🧖" },
+      { id: 43, cat: "home", indo: "Sikat Gigi", en: "Toothbrush", ph: "SEE-kaht GEE-gee", icon: "🪥" },
+      { id: 44, cat: "home", indo: "Kaca", en: "Mirror", ph: "KAH-chah", icon: "🪞" },
+      { id: 45, cat: "home", indo: "Kunci", en: "Key", ph: "KOON-chee", icon: "🔑" },
+      { id: 46, cat: "home", indo: "Jam", en: "Clock", ph: "JAHM", icon: "⏰" },
+      { id: 47, cat: "home", indo: "Baju", en: "Shirt", ph: "BAH-joo", icon: "👕" },
+      { id: 48, cat: "home", indo: "Celana", en: "Pants", ph: "cheh-LAH-nah", icon: "👖" },
+      { id: 49, cat: "home", indo: "Sepatu", en: "Shoes", ph: "seh-PAH-too", icon: "👟" },
+      { id: 50, cat: "home", indo: "Topi", en: "Hat", ph: "TOH-pee", icon: "🧢" },
+
+      // --- TOYS & PLAY / MAINAN & BERMAIN (20) ---
+      { id: 51, cat: "toys", indo: "Bola", en: "Ball", ph: "BOH-lah", icon: "⚽" },
+      { id: 52, cat: "toys", indo: "Boneka", en: "Doll", ph: "boh-NEH-kah", icon: "🧸" },
+      { id: 53, cat: "toys", indo: "Layang-layang", en: "Kite", ph: "LAH-yahng LAH-yahng", icon: "🪁" },
+      { id: 54, cat: "toys", indo: "Sepeda", en: "Bicycle", ph: "seh-PEH-dah", icon: "🚲" },
+      { id: 55, cat: "toys", indo: "Mobil Mainan", en: "Toy Car", ph: "MOH-beel MY-nahn", icon: "🚗" },
+      { id: 56, cat: "toys", indo: "Balok Susun", en: "Building Blocks", ph: "BAH-lok SOO-soon", icon: "🧱" },
+      { id: 57, cat: "toys", indo: "Robot", en: "Robot", ph: "ROH-bot", icon: "🤖" },
+      { id: 58, cat: "toys", indo: "Ayunan", en: "Swing", ph: "ah-YOO-nahn", icon: "🪢" },
+      { id: 59, cat: "toys", indo: "Perosotan", en: "Slide", ph: "peh-roh-SOH-tahn", icon: "🛝" },
+      { id: 60, cat: "toys", indo: "Balon", en: "Balloon", ph: "BAH-lon", icon: "🎈" },
+      { id: 61, cat: "toys", indo: "Gelembung", en: "Bubbles", ph: "geh-LEM-boong", icon: "🫧" },
+      { id: 62, cat: "toys", indo: "Kereta Mainan", en: "Toy Train", ph: "keh-REH-tah MY-nahn", icon: "🚂" },
+      { id: 63, cat: "toys", indo: "Gasing", en: "Spinning Top", ph: "GAH-seeng", icon: "🪀" },
+      { id: 64, cat: "toys", indo: "Pistol Air", en: "Water Gun", ph: "PEES-tohl EYE-er", icon: "🔫" },
+      { id: 65, cat: "toys", indo: "Puzzle", en: "Puzzle", ph: "PAH-zel", icon: "🧩" },
+      { id: 66, cat: "toys", indo: "Drum Mainan", en: "Toy Drum", ph: "DRAM MY-nahn", icon: "🥁" },
+      { id: 67, cat: "toys", indo: "Peluit", en: "Whistle", ph: "peh-LOO-eet", icon: "🪈" },
+      { id: 68, cat: "toys", indo: "Topeng", en: "Mask", ph: "TOH-peng", icon: "🎭" },
+      { id: 69, cat: "toys", indo: "Pesawat Mainan", en: "Toy Plane", ph: "peh-SAH-waht MY-nahn", icon: "✈️" },
+      { id: 70, cat: "toys", indo: "Kapal Mainan", en: "Toy Boat", ph: "KAH-pahl MY-nahn", icon: "⛵" },
+
+      // --- SCHOOL & LEARNING / SEKOLAH & BELAJAR (20) ---
+      { id: 71, cat: "school", indo: "Buku", en: "Book", ph: "BOO-koo", icon: "📖" },
+      { id: 72, cat: "school", indo: "Pensil", en: "Pencil", ph: "PEN-seel", icon: "✏️" },
+      { id: 73, cat: "school", indo: "Pulpen", en: "Pen", ph: "POOL-pen", icon: "🖊️" },
+      { id: 74, cat: "school", indo: "Tas Sekolah", en: "School Bag", ph: "TAHS seh-KOH-lah", icon: "🎒" },
+      { id: 75, cat: "school", indo: "Penghapus", en: "Eraser", ph: "peng-HAH-poos", icon: "🧼" },
+      { id: 76, cat: "school", indo: "Penggaris", en: "Ruler", ph: "peng-GAH-rees", icon: "📏" },
+      { id: 77, cat: "school", indo: "Gunting", en: "Scissors", ph: "GOON-teeng", icon: "✂️" },
+      { id: 78, cat: "school", indo: "Lem", en: "Glue", ph: "LEM", icon: "🧴" },
+      { id: 79, cat: "school", indo: "Kertas", en: "Paper", ph: "KER-tahs", icon: "📄" },
+      { id: 80, cat: "school", indo: "Krayon", en: "Crayon", ph: "KRAH-yon", icon: "🖍️" },
+      { id: 81, cat: "school", indo: "Papan Tulis", en: "Whiteboard/Blackboard", ph: "PAH-pahn TOO-lees", icon: "📋" },
+      { id: 82, cat: "school", indo: "Tempat Pensil", en: "Pencil Case", ph: "TEM-paht PEN-seel", icon: "👝" },
+      { id: 83, cat: "school", indo: "Guru", en: "Teacher", ph: "GOO-roo", icon: "🧑‍🏫" },
+      { id: 84, cat: "school", indo: "Murid", en: "Student", ph: "MOO-reed", icon: "🧑‍🎓" },
+      { id: 85, cat: "school", indo: "Bel", en: "Bell", ph: "BELL", icon: "🔔" },
+      { id: 86, cat: "school", indo: "Komputer", en: "Computer", ph: "kom-POO-ter", icon: "💻" },
+      { id: 87, cat: "school", indo: "Huruf", en: "Letter (Alphabet)", ph: "HOO-roof", icon: "🔤" },
+      { id: 88, cat: "school", indo: "Angka", en: "Number", ph: "AHNG-kah", icon: "🔢" },
+      { id: 89, cat: "school", indo: "Peta", en: "Map", ph: "PEH-tah", icon: "🗺️" },
+      { id: 90, cat: "school", indo: "Kuas", en: "Paintbrush", ph: "KOO-ahs", icon: "🖌️" },
+
+      // --- FOOD & DRINK / MAKANAN & MINUMAN (25) ---
+      { id: 91, cat: "food", indo: "Apel", en: "Apple", ph: "AH-pel", icon: "🍎" },
+      { id: 92, cat: "food", indo: "Pisang", en: "Banana", ph: "PEE-sahng", icon: "🍌" },
+      { id: 93, cat: "food", indo: "Jeruk", en: "Orange", ph: "jeh-ROOK", icon: "🍊" },
+      { id: 94, cat: "food", indo: "Semangka", en: "Watermelon", ph: "seh-MAHNG-kah", icon: "🍉" },
+      { id: 95, cat: "food", indo: "Mangga", en: "Mango", ph: "MAHNG-gah", icon: "🥭" },
+      { id: 96, cat: "food", indo: "Kelapa", en: "Coconut", ph: "keh-LAH-pah", icon: "🥥" },
+      { id: 97, cat: "food", indo: "Nasi", en: "Cooked Rice", ph: "NAH-see", icon: "🍚" },
+      { id: 98, cat: "food", indo: "Roti", en: "Bread", ph: "ROH-tee", icon: "🍞" },
+      { id: 99, cat: "food", indo: "Telur", en: "Egg", ph: "teh-LOOR", icon: "🥚" },
+      { id: 100, cat: "food", indo: "Susu", en: "Milk", ph: "SOO-soo", icon: "🥛" },
+      { id: 101, cat: "food", indo: "Air", en: "Water", ph: "AH-yeer", icon: "💧" },
+      { id: 102, cat: "food", indo: "Madu", en: "Honey", ph: "MAH-doo", icon: "🍯" },
+      { id: 103, cat: "food", indo: "Keju", en: "Cheese", ph: "KEH-joo", icon: "🧀" },
+      { id: 104, cat: "food", indo: "Jagung", en: "Corn", ph: "JAH-goong", icon: "🌽" },
+      { id: 105, cat: "food", indo: "Wortel", en: "Carrot", ph: "WOR-tel", icon: "🥕" },
+      { id: 106, cat: "food", indo: "Tomat", en: "Tomato", ph: "TOH-maht", icon: "🍅" },
+      { id: 107, cat: "food", indo: "Kue", en: "Cake", ph: "KOO-eh", icon: "🍰" },
+      { id: 108, cat: "food", indo: "Es Krim", en: "Ice Cream", ph: "ES KREEM", icon: "🍦" },
+      { id: 109, cat: "food", indo: "Cokelat", en: "Chocolate", ph: "CHOH-keh-laht", icon: "🍫" },
+      { id: 110, cat: "food", indo: "Sup", en: "Soup", ph: "SOOP", icon: "🍲" },
+      { id: 111, cat: "food", indo: "Mie", en: "Noodles", ph: "MEE", icon: "🍜" },
+      { id: 112, cat: "food", indo: "Daging", en: "Meat", ph: "DAH-geeng", icon: "🥩" },
+      { id: 113, cat: "food", indo: "Ikan Bakar", en: "Grilled Fish", ph: "EE-kahn BAH-kahr", icon: "🐟" },
+      { id: 114, cat: "food", indo: "Gula", en: "Sugar", ph: "GOO-lah", icon: "🍬" },
+      { id: 115, cat: "food", indo: "Garam", en: "Salt", ph: "GAH-rahm", icon: "🧂" },
+
+      // --- NATURE & COLORS / ALAM & WARNA (25) ---
+      { id: 116, cat: "nature", indo: "Matahari", en: "Sun", ph: "mah-tah-HAH-ree", icon: "☀️" },
+      { id: 117, cat: "nature", indo: "Bulan", en: "Moon", ph: "BOO-lahn", icon: "🌙" },
+      { id: 118, cat: "nature", indo: "Bintang", en: "Star", ph: "BEEN-tahng", icon: "⭐" },
+      { id: 119, cat: "nature", indo: "Awan", en: "Cloud", ph: "AH-wahn", icon: "☁️" },
+      { id: 120, cat: "nature", indo: "Hujan", en: "Rain", ph: "HOO-jahn", icon: "🌧️" },
+      { id: 121, cat: "nature", indo: "Pelangi", en: "Rainbow", ph: "peh-LAHNG-ee", icon: "🌈" },
+      { id: 122, cat: "nature", indo: "Pohon", en: "Tree", ph: "POH-hon", icon: "🌳" },
+      { id: 123, cat: "nature", indo: "Bunga", en: "Flower", ph: "BOONG-ah", icon: "🌸" },
+      { id: 124, cat: "nature", indo: "Daun", en: "Leaf", ph: "DAH-oon", icon: "🍃" },
+      { id: 125, cat: "nature", indo: "Rumput", en: "Grass", ph: "ROOM-poot", icon: "🌱" },
+      { id: 126, cat: "nature", indo: "Gunung", en: "Mountain", ph: "GOO-noong", icon: "⛰️" },
+      { id: 127, cat: "nature", indo: "Laut", en: "Sea/Ocean", ph: "LAH-oot", icon: "🌊" },
+      { id: 128, cat: "nature", indo: "Sungai", en: "River", ph: "SOONG-eye", icon: "🏞️" },
+      { id: 129, cat: "nature", indo: "Api", en: "Fire", ph: "AH-pee", icon: "🔥" },
+      { id: 130, cat: "nature", indo: "Batu", en: "Stone / Rock", ph: "BAH-too", icon: "🪨" },
+      // Colors
+      { id: 131, cat: "nature", indo: "Merah", en: "Red", ph: "MEH-rah", icon: "🔴" },
+      { id: 132, cat: "nature", indo: "Biru", en: "Blue", ph: "BEE-roo", icon: "🔵" },
+      { id: 133, cat: "nature", indo: "Kuning", en: "Yellow", ph: "KOO-neeng", icon: "🟡" },
+      { id: 134, cat: "nature", indo: "Hijau", en: "Green", ph: "HEE-jow", icon: "🟢" },
+      { id: 135, cat: "nature", indo: "Putih", en: "White", ph: "POO-teeh", icon: "⚪" },
+      { id: 136, cat: "nature", indo: "Hitam", en: "Black", ph: "HEE-tahm", icon: "⚫" },
+      { id: 137, cat: "nature", indo: "Jingga / Oranye", en: "Orange (Color)", ph: "JEENG-gah", icon: "🟠" },
+      { id: 138, cat: "nature", indo: "Ungu", en: "Purple", ph: "OONG-oo", icon: "🟣" },
+      { id: 139, cat: "nature", indo: "Cokelat", en: "Brown", ph: "CHOH-keh-laht", icon: "🟤" },
+      { id: 140, cat: "nature", indo: "Merah Muda", en: "Pink", ph: "MEH-rah MOO-dah", icon: "🩷" }
+    ];
+
+    // Categories definition
+    const CATEGORIES = [
+      { id: "all", nameId: "Semua", nameEn: "All", icon: "🌟" },
+      { id: "animals", nameId: "Hewan", nameEn: "Animals", icon: "🐾" },
+      { id: "home", nameId: "Rumah", nameEn: "Home Items", icon: "🏠" },
+      { id: "toys", nameId: "Mainan", nameEn: "Toys", icon: "🧸" },
+      { id: "school", nameId: "Sekolah", nameEn: "School", icon: "🎒" },
+      { id: "food", nameId: "Makanan", nameEn: "Food & Drink", icon: "🍎" },
+      { id: "nature", nameId: "Alam & Warna", nameEn: "Nature & Colors", icon: "🌳" }
+    ];
+
+    // Web Audio API Synthesizer for 100% Offline Sound Effects
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playTone(freq, duration, type = "sine", gainVal = 0.15) {
+        if (!this.enabled) return;
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {
+          console.warn("Audio unavailable", e);
+        }
+      }
+      flip() {
+        this.playTone(480, 0.08, "triangle", 0.1);
+      }
+      correct() {
+        this.playTone(523.25, 0.1, "sine", 0.15); // C5
+        setTimeout(() => this.playTone(659.25, 0.12, "sine", 0.15), 100); // E5
+        setTimeout(() => this.playTone(783.99, 0.25, "triangle", 0.2), 220); // G5
+      }
+      wrong() {
+        this.playTone(280, 0.12, "sawtooth", 0.12);
+        setTimeout(() => this.playTone(220, 0.2, "sawtooth", 0.12), 120);
+      }
+      starFanfare() {
+        const notes = [523, 659, 783, 1046];
+        notes.forEach((n, idx) => {
+          setTimeout(() => this.playTone(n, 0.15, "triangle", 0.18), idx * 80);
+        });
+      }
+    }
+
+    const sfx = new SoundFX();
+
+    // App State
+    let currentMode = "flashcard"; // 'flashcard' | 'quiz' | 'duo'
+    let selectedCategory = "all";
+    let activeDeck = [...VOCABULARY];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let autoPlayAudio = false;
+
+    // Quiz State
+    let quizScore = 0;
+    let quizStreak = 0;
+    let currentQuizItem = null;
+
+    // Duo State
+    let duoStars = 0;
+    let duoTurnIndex = 0; // 0 = Child, 1 = Adult
+    let duoPeekVisible = false;
+
+    // User Preferences
+    let speechRate = 0.9;
+    let frontModePreference = "indo_first"; // 'indo_first' | 'english_first' | 'pic_only'
+
+    // Browser Speech Synthesis with Fallback
+    function speakText(text, lang = "id-ID") {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel(); // Stop prior audio
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = speechRate;
+        utterance.lang = lang;
+        
+        // Voice matching: look for appropriate accent if installed on device
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          const matchedVoice = voices.find(v => v.lang.startsWith(lang.slice(0, 2)));
+          if (matchedVoice) utterance.voice = matchedVoice;
+        }
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn("Speech synthesis error", err);
+      }
+    }
+
+    function speakCurrentWord(side) {
+      sfx.init();
+      const item = activeDeck[currentIndex];
+      if (!item) return;
+
+      if (side === 'front') {
+        if (frontModePreference === 'english_first') {
+          speakText(item.en, "en-US");
+        } else {
+          speakText(item.indo, "id-ID");
+        }
+      } else {
+        if (frontModePreference === 'english_first') {
+          speakText(item.indo, "id-ID");
+        } else {
+          speakText(item.en, "en-US");
+        }
+      }
+    }
+
+    // Render Category Filter Pills
+    function renderCategoryPills() {
+      const container = document.getElementById('categoryPills');
+      container.innerHTML = "";
+      
+      CATEGORIES.forEach(cat => {
+        const btn = document.createElement('button');
+        const isSelected = selectedCategory === cat.id;
+        btn.className = `whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+          isSelected 
+            ? "bg-lagoon-600 text-white shadow-sm ring-2 ring-lagoon-400" 
+            : "bg-white text-gray-600 border border-amber-200/80 hover:bg-amber-50"
+        }`;
+        btn.innerHTML = `<span>${cat.icon}</span> <span>${cat.nameId}</span>`;
+        btn.onclick = () => {
+          sfx.playTone(600, 0.04);
+          selectedCategory = cat.id;
+          filterDeck();
+          renderCategoryPills();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    // Filter deck based on selected category
+    function filterDeck() {
+      if (selectedCategory === "all") {
+        activeDeck = [...VOCABULARY];
+      } else {
+        activeDeck = VOCABULARY.filter(item => item.cat === selectedCategory);
+      }
+      currentIndex = 0;
+      isFlipped = false;
+      updateFlashcardView();
+      if (currentMode === 'quiz') generateQuizQuestion();
+      if (currentMode === 'duo') updateDuoView();
+    }
+
+    // Switch Application Modes
+    function switchMode(mode) {
+      sfx.init();
+      sfx.playTone(550, 0.05);
+      currentMode = mode;
+      
+      // Update Tab Styles
+      ['flashcard', 'quiz', 'duo'].forEach(m => {
+        const tab = document.getElementById(m === 'flashcard' ? 'modeTab1' : m === 'quiz' ? 'modeTab2' : 'modeTab3');
+        if (m === mode) {
+          tab.className = "mode-tab-btn py-2 px-1 text-center font-bold text-xs rounded-xl transition-all duration-200 bg-white text-lagoon-700 shadow-sm";
+        } else {
+          tab.className = "mode-tab-btn py-2 px-1 text-center font-bold text-xs rounded-xl transition-all duration-200 text-gray-600 hover:text-gray-900";
+        }
+      });
+
+      // Switch Visibility
+      document.getElementById('viewFlashcard').classList.toggle('hidden', mode !== 'flashcard');
+      document.getElementById('viewQuiz').classList.toggle('hidden', mode !== 'quiz');
+      document.getElementById('viewDuo').classList.toggle('hidden', mode !== 'duo');
+
+      if (mode === 'quiz') {
+        generateQuizQuestion();
+      } else if (mode === 'duo') {
+        updateDuoView();
+      } else {
+        updateFlashcardView();
+      }
+    }
+
+    function updateFlashcardView() {
+      if (activeDeck.length === 0) return;
+      const card = activeDeck[currentIndex];
+      const inner = document.getElementById('flashcardInner');
+
+      // Unflip card first when advancing
+      if (isFlipped) {
+        inner.classList.remove('rotate-y-180');
+        isFlipped = false;
+      }
+
+      // Update counters
+      document.getElementById('cardCounter').innerText = `${currentIndex + 1} / ${activeDeck.length}`;
+
+      // Populate Front Side based on settings
+      const frontBadge = document.getElementById('frontCatBadge');
+      const frontIcon = document.getElementById('frontCardIcon');
+      const frontWord = document.getElementById('frontMainWord');
+      const frontPhonetic = document.getElementById('frontPhonetic');
+
+      // Populate Back Side
+      const backBadge = document.getElementById('backCatBadge');
+      const backIcon = document.getElementById('backCardIcon');
+      const backWord = document.getElementById('backMainWord');
+      const backSubWord = document.getElementById('backSubWord');
+
+      frontIcon.innerText = card.icon;
+      backIcon.innerText = card.icon;
+
+      if (frontModePreference === 'english_first') {
+        frontBadge.innerText = "English Prompt";
+        frontWord.innerText = card.en;
+        frontPhonetic.innerText = `ID: ${card.indo} (${card.ph})`;
+
+        backBadge.innerText = "Bahasa Indonesia";
+        backWord.innerText = card.indo;
+        backSubWord.innerText = card.en;
+      } else if (frontModePreference === 'pic_only') {
+        frontBadge.innerText = "Tebak Kata";
+        frontWord.innerText = "???";
+        frontPhonetic.innerText = "Ketuk untuk melihat";
+
+        backBadge.innerText = "Jawaban / Answer";
+        backWord.innerText = `${card.indo} / ${card.en}`;
+        backSubWord.innerText = card.ph;
+      } else {
+        // Standard Indonesian First
+        frontBadge.innerText = card.cat.toUpperCase();
+        frontWord.innerText = card.indo;
+        frontPhonetic.innerText = card.ph;
+
+        backBadge.innerText = "English Word";
+        backWord.innerText = card.en;
+        backSubWord.innerText = `${card.indo} (${card.ph})`;
+      }
+
+      if (autoPlayAudio) {
+        setTimeout(() => speakCurrentWord('front'), 200);
+      }
+    }
+
+    function flipCard() {
+      sfx.flip();
+      const inner = document.getElementById('flashcardInner');
+      isFlipped = !isFlipped;
+      if (isFlipped) {
+        inner.classList.add('rotate-y-180');
+        if (autoPlayAudio) {
+          setTimeout(() => speakCurrentWord('back'), 250);
+        }
+      } else {
+        inner.classList.remove('rotate-y-180');
+      }
+    }
+
+    function nextCard() {
+      sfx.init();
+      currentIndex = (currentIndex + 1) % activeDeck.length;
+      updateFlashcardView();
+    }
+
+    function prevCard() {
+      sfx.init();
+      currentIndex = (currentIndex - 1 + activeDeck.length) % activeDeck.length;
+      updateFlashcardView();
+    }
+
+    function shuffleCards() {
+      sfx.playTone(700, 0.08);
+      for (let i = activeDeck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [activeDeck[i], activeDeck[j]] = [activeDeck[j], activeDeck[i]];
+      }
+      currentIndex = 0;
+      updateFlashcardView();
+    }
+
+    function toggleAudioAutoPlay() {
+      autoPlayAudio = !autoPlayAudio;
+      document.getElementById('autoPlayIcon').innerText = autoPlayAudio ? '🔊' : '🔈';
+      document.getElementById('btnToggleSpeechLang').classList.toggle('bg-lagoon-100', autoPlayAudio);
+      document.getElementById('btnToggleSpeechLang').classList.toggle('text-lagoon-800', autoPlayAudio);
+    }
+
+    function generateQuizQuestion() {
+      if (activeDeck.length < 4) {
+        activeDeck = [...VOCABULARY];
+      }
+      // Pick random correct item
+      const randIdx = Math.floor(Math.random() * activeDeck.length);
+      currentQuizItem = activeDeck[randIdx];
+
+      // Pick 3 unique wrong options from total vocabulary
+      const options = [currentQuizItem];
+      while (options.length < 4) {
+        const candidate = VOCABULARY[Math.floor(Math.random() * VOCABULARY.length)];
+        if (!options.some(opt => opt.id === candidate.id)) {
+          options.push(candidate);
+        }
+      }
+
+      // Shuffle 4 options
+      options.sort(() => Math.random() - 0.5);
+
+      // Quiz prompt presentation
+      const promptIcon = document.getElementById('quizPromptIcon');
+      const promptText = document.getElementById('quizPromptText');
+      const promptPhonetic = document.getElementById('quizPromptPhonetic');
+
+      promptIcon.innerText = currentQuizItem.icon;
+      promptText.innerText = currentQuizItem.indo;
+      promptPhonetic.innerText = currentQuizItem.ph;
+
+      // Render 4 answer tiles
+      const grid = document.getElementById('quizOptionsGrid');
+      grid.innerHTML = "";
+
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = "py-3.5 px-3 rounded-2xl bg-white border-2 border-amber-200/90 text-gray-800 font-bold shadow-chunky btn-bounce flex flex-col items-center justify-center text-center transition-all";
+        btn.innerHTML = `
+          <span class="text-xl mb-0.5">${opt.icon}</span>
+          <span class="text-base font-extrabold text-lagoon-700">${opt.en}</span>
+          <span class="text-[10px] text-gray-400 font-semibold">${opt.indo}</span>
+        `;
+        btn.onclick = () => handleQuizAnswer(opt.id === currentQuizItem.id, btn);
+        grid.appendChild(btn);
+      });
+
+      // Auto pronounce prompt
+      speakText(currentQuizItem.indo, "id-ID");
+    }
+
+    function speakQuizPrompt() {
+      if (currentQuizItem) {
+        speakText(currentQuizItem.indo, "id-ID");
+      }
+    }
+
+    function triggerConfettiBurst() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 45,
+          spread: 60,
+          origin: { y: 0.65 },
+          colors: ['#f59e0b', '#14b8a6', '#f43f5e', '#3b82f6']
+        });
+      }
+    }
+
+    function handleQuizAnswer(isCorrect, buttonElem) {
+      sfx.init();
+      const allButtons = document.querySelectorAll('#quizOptionsGrid button');
+      allButtons.forEach(b => b.disabled = true);
+
+      if (isCorrect) {
+        sfx.correct();
+        triggerConfettiBurst();
+        quizScore += 10;
+        quizStreak += 1;
+        buttonElem.classList.remove('bg-white', 'border-amber-200/90');
+        buttonElem.classList.add('bg-emerald-500', 'border-emerald-600', 'text-white');
+        
+        // Update stats
+        document.getElementById('quizScore').innerText = quizScore;
+        document.getElementById('quizStreak').innerText = quizStreak;
+
+        setTimeout(() => {
+          generateQuizQuestion();
+        }, 900);
+      } else {
+        sfx.wrong();
+        quizStreak = 0;
+        document.getElementById('quizStreak').innerText = quizStreak;
+        buttonElem.classList.remove('bg-white', 'border-amber-200/90');
+        buttonElem.classList.add('bg-rose-500', 'border-rose-600', 'text-white');
+
+        setTimeout(() => {
+          allButtons.forEach(b => b.disabled = false);
+          buttonElem.classList.remove('bg-rose-500', 'border-rose-600', 'text-white');
+          buttonElem.classList.add('bg-white', 'border-amber-200/90');
+        }, 700);
+      }
+    }
+
+    function updateDuoView() {
+      if (activeDeck.length === 0) return;
+      const currentItem = activeDeck[currentIndex];
+      
+      const turnCard = document.getElementById('duoTurnCard');
+      const turnAvatar = document.getElementById('duoTurnAvatar');
+      const turnTitle = document.getElementById('duoTurnTitle');
+      const turnInstructions = document.getElementById('duoTurnInstructions');
+
+      // Update player turn cue
+      if (duoTurnIndex === 0) {
+        // Child's turn (Speaks English)
+        turnCard.className = "w-full bg-gradient-to-r from-amber-400 to-mango-500 text-white rounded-2xl p-3 shadow-md mb-3 flex items-center justify-between transition-colors";
+        turnAvatar.innerText = "👦";
+        turnTitle.innerText = "Giliran Anak (Child's Turn)";
+        turnInstructions.innerText = "Coba sebutkan dalam Bahasa Inggris!";
+      } else {
+        // Adult's turn (Tries Indonesian)
+        turnCard.className = "w-full bg-gradient-to-r from-lagoon-500 to-teal-600 text-white rounded-2xl p-3 shadow-md mb-3 flex items-center justify-between transition-colors";
+        turnAvatar.innerText = "👱‍♂️";
+        turnTitle.innerText = "Giliran Dewasa (Adult's Turn)";
+        turnInstructions.innerText = "Try saying the Indonesian word out loud!";
+      }
+
+      // Display prompt
+      document.getElementById('duoBigIcon').innerText = currentItem.icon;
+      document.getElementById('duoPrimaryWord').innerText = currentItem.indo;
+      document.getElementById('duoPronunciation').innerText = currentItem.ph;
+
+      // Setup hidden answer key
+      document.getElementById('duoAnswerEnglish').innerText = currentItem.en;
+      document.getElementById('duoAnswerIndo').innerText = `${currentItem.indo} (${currentItem.ph})`;
+
+      // Reset peek state
+      duoPeekVisible = false;
+      document.getElementById('duoPeekAnswer').classList.add('hidden');
+      document.getElementById('btnDuoPeek').innerText = "👁️ Intip Jawaban / Check Answer";
+
+      // Pronounce word
+      speakText(currentItem.indo, "id-ID");
+    }
+
+    function toggleDuoPeek() {
+      sfx.flip();
+      duoPeekVisible = !duoPeekVisible;
+      const peekBox = document.getElementById('duoPeekAnswer');
+      const btn = document.getElementById('btnDuoPeek');
+      
+      if (duoPeekVisible) {
+        peekBox.classList.remove('hidden');
+        btn.innerText = "🙈 Sembunyikan Kunci / Hide Answer";
+      } else {
+        peekBox.classList.add('hidden');
+        btn.innerText = "👁️ Intip Jawaban / Check Answer";
+      }
+    }
+
+    function handleDuoResult(success) {
+      sfx.init();
+      if (success) {
+        sfx.starFanfare();
+        triggerConfettiBurst();
+        duoStars += 1;
+        document.getElementById('duoStarsDisplay').innerText = `⭐⭐⭐ (${duoStars})`;
+      } else {
+        sfx.wrong();
+      }
+
+      // Alternate player turns and advance card
+      duoTurnIndex = duoTurnIndex === 0 ? 1 : 0;
+      currentIndex = (currentIndex + 1) % activeDeck.length;
+      updateDuoView();
+    }
+
+    function resetDuoScore() {
+      duoStars = 0;
+      duoTurnIndex = 0;
+      document.getElementById('duoStarsDisplay').innerText = `⭐⭐⭐ (0)`;
+      updateDuoView();
+    }
+
+    function openSettingsModal() {
+      sfx.init();
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    document.getElementById('btnOpenSettings').onclick = openSettingsModal;
+
+    function toggleSfx(enabled) {
+      sfx.enabled = enabled;
+    }
+
+    function updateSpeechRate(val) {
+      speechRate = parseFloat(val);
+      document.getElementById('speechRateLabel').innerText = `${val}x`;
+    }
+
+    function updateFrontMode(val) {
+      frontModePreference = val;
+      updateFlashcardView();
+    }
+
+    // In-memory Progressive Web App registration so GitHub Pages is 100% offline
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        // Build lightweight inline service worker for offline fallback
+        const swBlob = new Blob([`
+          const CACHE_NAME = 'sahabat-kata-v1';
+          self.addEventListener('install', (event) => {
+            self.skipWaiting();
+          });
+          self.addEventListener('activate', (event) => {
+            event.waitUntil(clients.claim());
+          });
+          self.addEventListener('fetch', (event) => {
+            event.respondWith(
+              fetch(event.request).catch(() => caches.match(event.request))
+            );
+          });
+        `], { type: 'application/javascript' });
+
+        const swUrl = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl).catch(() => {
+          // Fallback gracefully without throwing errors in strict sandbox iFrames
+        });
+      });
+    }
+
+    // Monitor Online/Offline Status
+    window.addEventListener('offline', () => {
+      const badge = document.getElementById('offlineBadge');
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Mode Offline Aktif`;
+      badge.className = "px-2 py-1 bg-amber-50 text-amber-800 rounded-full text-[10px] font-extrabold flex items-center gap-1 border border-amber-200";
+    });
+
+    window.addEventListener('online', () => {
+      const badge = document.getElementById('offlineBadge');
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Offline Ready`;
+      badge.className = "px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-extrabold flex items-center gap-1 border border-emerald-200";
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCategoryPills();
+      updateFlashcardView();
+    });
+  </script>
+</body>
+</html>
